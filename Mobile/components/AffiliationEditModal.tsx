@@ -1,5 +1,3 @@
-import { saveUserProfile } from "../utils/userService";
-import { useAuthStore } from "../app/store/useAuthStore";
 import React, { useState } from "react";
 import {
   View,
@@ -11,6 +9,8 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { useAuthStore } from "../app/store/useAuthStore";
+import { saveUserProfile } from "../utils/userService";
 
 const affiliationOptions = [
   "간호대학",
@@ -40,11 +40,12 @@ export default function AffiliationEditModal({
   onClose,
 }: AffiliationEditModalProps) {
   const { affiliation, setAffiliation, firebaseUser } = useAuthStore();
-  const [selectedOption, setSelectedOption] = useState(affiliation || "");
+  const [clickedOption, setClickedOption] = useState(affiliation || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const handleSave = async () => {
-    if (!selectedOption) {
+  const handleAffiliationSubmit = async () => {
+    if (!clickedOption) {
       Alert.alert("알림", "단과대학을 선택해주세요.");
       return;
     }
@@ -57,8 +58,8 @@ export default function AffiliationEditModal({
     setIsLoading(true);
 
     try {
-      await saveUserProfile(firebaseUser, selectedOption);
-      setAffiliation(selectedOption);
+      await saveUserProfile(firebaseUser, clickedOption);
+      setAffiliation(clickedOption);
       Alert.alert("성공", "단과대학이 변경되었습니다.");
       onClose();
     } catch (error) {
@@ -85,59 +86,97 @@ export default function AffiliationEditModal({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.currentAffiliation}>
-            <Text style={styles.currentLabel}>현재 소속</Text>
-            <Text style={styles.currentValue}>{affiliation}</Text>
-          </View>
+          <View style={styles.formContainer}>
+            <View style={styles.currentAffiliation}>
+              <Text style={styles.currentLabel}>현재 소속</Text>
+              <Text style={styles.currentValue}>{affiliation}</Text>
+            </View>
 
-          <FlatList
-            data={affiliationOptions}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.optionItem,
-                  selectedOption === item && styles.selectedOption,
-                ]}
-                onPress={() => setSelectedOption(item)}
+            <Text style={styles.label}>변경할 단과대학</Text>
+            <TouchableOpacity
+              style={styles.selectButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text
+                style={
+                  clickedOption ? styles.selectedText : styles.placeholderText
+                }
               >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedOption === item && styles.selectedOptionText,
-                  ]}
-                >
-                  {item}
-                </Text>
-                {selectedOption === item && (
-                  <Text style={styles.checkmark}>✓</Text>
-                )}
-              </TouchableOpacity>
-            )}
-          />
+                {clickedOption || "단과대학을 선택하세요"}
+              </Text>
+              <Text style={styles.arrowIcon}>▼</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              (!selectedOption ||
-                isLoading ||
-                selectedOption === affiliation) &&
-                styles.buttonDisabled,
-            ]}
-            onPress={handleSave}
-            disabled={
-              isLoading || !selectedOption || selectedOption === affiliation
-            }
-          >
-            {isLoading ? (
-              <View style={styles.buttonContent}>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <Text style={styles.buttonText}>변경 중...</Text>
+            <Modal
+              visible={modalVisible}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <View style={styles.pickerModalOverlay}>
+                <View style={styles.pickerModalContent}>
+                  <View style={styles.pickerModalHeader}>
+                    <Text style={styles.pickerModalTitle}>단과대학 선택</Text>
+                    <TouchableOpacity onPress={() => setModalVisible(false)}>
+                      <Text style={styles.pickerCloseButton}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <FlatList
+                    data={affiliationOptions}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.optionItem,
+                          clickedOption === item && styles.selectedOption,
+                        ]}
+                        onPress={() => {
+                          setClickedOption(item);
+                          setModalVisible(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            clickedOption === item && styles.selectedOptionText,
+                          ]}
+                        >
+                          {item}
+                        </Text>
+                        {clickedOption === item && (
+                          <Text style={styles.checkmark}>✓</Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
               </View>
-            ) : (
-              <Text style={styles.buttonText}>변경하기</Text>
-            )}
-          </TouchableOpacity>
+            </Modal>
+
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                (!clickedOption ||
+                  isLoading ||
+                  clickedOption === affiliation) &&
+                  styles.buttonDisabled,
+              ]}
+              onPress={handleAffiliationSubmit}
+              disabled={
+                isLoading || !clickedOption || clickedOption === affiliation
+              }
+            >
+              {isLoading ? (
+                <View style={styles.buttonContent}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.buttonText}>변경 중...</Text>
+                </View>
+              ) : (
+                <Text style={styles.buttonText}>변경하기</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -154,7 +193,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "80%",
+    maxHeight: "70%",
     paddingBottom: 20,
   },
   modalHeader: {
@@ -175,13 +214,14 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontWeight: "300",
   },
+  formContainer: {
+    padding: 20,
+  },
   currentAffiliation: {
     backgroundColor: "#F3F4F6",
     padding: 16,
-    marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 8,
     borderRadius: 12,
+    marginBottom: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -196,18 +236,74 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontWeight: "600",
   },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: 8,
+  },
+  selectButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+  },
+  placeholderText: {
+    color: "#9CA3AF",
+    fontSize: 14,
+  },
+  selectedText: {
+    color: "#1F2937",
+    fontSize: 14,
+  },
+  arrowIcon: {
+    color: "#6B7280",
+    fontSize: 12,
+  },
+  pickerModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  pickerModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+    paddingBottom: 20,
+  },
+  pickerModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  pickerModalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  pickerCloseButton: {
+    fontSize: 24,
+    color: "#6B7280",
+    fontWeight: "300",
+  },
   optionItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    marginHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
   },
   selectedOption: {
     backgroundColor: "#EEF2FF",
-    borderRadius: 8,
   },
   optionText: {
     fontSize: 16,
@@ -221,13 +317,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#4F46E5",
   },
-  saveButton: {
+  submitButton: {
     backgroundColor: "#4F46E5",
-    marginHorizontal: 20,
-    marginTop: 16,
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
+    marginTop: 24,
   },
   buttonDisabled: {
     opacity: 0.5,

@@ -13,7 +13,7 @@ import { useCategoryStore } from "../../store/useCategoryStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ref, onValue } from "firebase/database";
 import { db } from "../../../firebase/config";
-import { useAuthState } from "@/hooks/useAuthState";
+import AffiliationEditModal from "../../../components/AffiliationEditModal";
 
 export default function Home() {
   const navigation = useNavigation();
@@ -69,7 +69,6 @@ export default function Home() {
   const fetchRandomPartnerStore = () => {
     try {
       if (!data || data.length === 0) {
-        // console.error("제휴상점 데이터가 없습니다.");
         return;
       }
 
@@ -194,9 +193,7 @@ export default function Home() {
                         styles.categoryIconContainerActive,
                     ]}
                   >
-                    <Text style={styles.categoryIcon}>
-                      {/* {getCategoryEmoji(category.icon)} */}
-                    </Text>
+                    <Text style={styles.categoryIcon}>{/* 아이콘 */}</Text>
                   </View>
                   <Text
                     style={[
@@ -251,23 +248,14 @@ export default function Home() {
         </View>
       </ScrollView>
 
-      {/* AffiliationEditModal 추가 필요 */}
+      {/* 단과대학 변경 모달 */}
+      <AffiliationEditModal
+        visible={affilModalView}
+        onClose={() => setAffilModalView(false)}
+      />
     </View>
   );
 }
-
-// 카테고리 아이콘을 이모지로 매핑
-// function getCategoryEmoji(icon: string): string {
-//   const iconMap: { [key: string]: string } = {
-//     "ri-restaurant-fill": "🍽️",
-//     "ri-cup-fill": "☕",
-//     "ri-scissors-fill": "✂️",
-//     "ri-shopping-bag-fill": "🛍️",
-//     "ri-home-fill": "🏠",
-//     "ri-more-fill": "➕",
-//   };
-//   return iconMap[icon] || "📌";
-// }
 
 const styles = StyleSheet.create({
   container: {
@@ -381,25 +369,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     marginBottom: 12,
   },
-  categoryButtonActive: {
-    // Active state handled by child components
-  },
-  categoryButtonInner: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  categoryButtonInnerActive: {
-    backgroundColor: "#4F46E5",
-    shadowOpacity: 0.15,
-    elevation: 4,
-  },
+  categoryButtonActive: {},
   categoryIconContainer: {
     width: 32,
     height: 32,
