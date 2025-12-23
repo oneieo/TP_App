@@ -42,7 +42,6 @@ const AffiliationEditModal = ({
 
       console.log("소속 변경 성공");
       setAffilModalView(false);
-      alert("소속 대학이 변경되었습니다.");
     } catch (error) {
       console.error("소속 대학 변경 오류:", error);
       alert("변경에 실패했습니다. 다시 시도해주세요.");
