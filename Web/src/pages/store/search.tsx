@@ -3,26 +3,28 @@ import { useEffect, useState } from "react";
 import TopNavigation from "../../components/feature/TopNavigation";
 import BottomNavigation from "../../components/feature/BottomNavigation";
 import Card from "../../components/base/Card";
-import type { PartnerStore, PartnerCategory } from "../../types/partnerStoreType";
+import type {
+  PartnerStore,
+  PartnerCategory,
+} from "../../types/partnerStoreType";
 import { useAuthStore } from "../../store/useAuthStore";
+import { ref, get } from "firebase/database";
+import { db } from "../../firebase/config";
 
-// 제휴 카테고리와 해당 카테고리의 상점 ID를 매핑
 interface AffiliationInfo {
   category: string;
   storeId: number;
 }
 
-interface GroupedPartnerStore extends Omit<PartnerStore, "partnerCategory" | "partnerStoreId"> {
-  // 대표 ID (화면 표시용, 실제 이동시에는 로직에 따라 변경됨)
+interface GroupedPartnerStore
+  extends Omit<PartnerStore, "partnerCategory" | "partnerStoreId"> {
   representativeId: number;
-  // 제휴 맺은 곳들의 정보 목록 (예: [{category: "공과대학", id: 1}, {category: "총학생회", id: 2}])
   affiliations: AffiliationInfo[];
 }
 
-// 모든 카테고리 목록 
 const ALL_CATEGORIES: string[] = [
-  "총학생회", 
-  "총동아리", 
+  "총학생회",
+  "총동아리",
   "간호대학",
   "경상대학",
   "공과대학",
@@ -46,9 +48,8 @@ const ALL_CATEGORIES: string[] = [
 
 export default function StoreSearchPage() {
   const navigate = useNavigate();
-  // 로그인한 유저의 소속 정보를 가져옴 (우선순위 판단용)
   const { affiliation: userAffiliation } = useAuthStore();
-  
+
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
 
@@ -60,26 +61,42 @@ export default function StoreSearchPage() {
     const map = new Map<string, GroupedPartnerStore>();
 
     rawStores.forEach((store) => {
-      const normalizedName = store.storeName.trim();
+      const normalizedName = (store.storeName || store.store_name).trim();
       const normalizedAddress = store.address.trim();
       const key = `${normalizedName}-${normalizedAddress}`;
 
+      const storeId = store.partnerStoreId || store.partner_store_id;
+      const category = store.partnerCategory || store.partner_category;
+
       const affiliationInfo: AffiliationInfo = {
-        category: store.partnerCategory,
-        storeId: store.partnerStoreId,
+        category: category,
+        storeId: storeId,
       };
 
       if (map.has(key)) {
         const existing = map.get(key)!;
-    
-        if (!existing.affiliations.some(a => a.category === store.partnerCategory)) {
+
+        if (!existing.affiliations.some((a) => a.category === category)) {
           existing.affiliations.push(affiliationInfo);
         }
       } else {
+        const normalizedStore = {
+          ...store,
+          storeName: store.store_name || store.storeName,
+          partnerStoreId: storeId,
+          partnerCategory: category,
+          partnerBenefit: store.partner_benefit || store.partnerBenefit,
+          openingTime: store.opening_time || store.openingTime,
+          closingTime: store.closing_time || store.closingTime,
+          breakStartTime: store.break_start_time || store.breakStartTime,
+          breakEndTime: store.break_end_time || store.breakEndTime,
+          lastOrder: store.last_order || store.lastOrder,
+        };
+
         map.set(key, {
-          ...store, 
-          representativeId: store.partnerStoreId, // 임시 대표 ID
-          affiliations: [affiliationInfo], // 제휴 정보 배열 시작
+          ...normalizedStore,
+          representativeId: storeId,
+          affiliations: [affiliationInfo],
         });
       }
     });
@@ -87,35 +104,27 @@ export default function StoreSearchPage() {
     return Array.from(map.values());
   };
 
-  // [API] 모든 카테고리 데이터 병렬 호출
   const fetchAllStores = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const promises = ALL_CATEGORIES.map((category) =>
-        fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/partner-store?page=0&size=100&partnerCategory=${encodeURIComponent(
-            category
-          )}`,
-          {
-            method: "GET",
-            headers: { Accept: "application/json; charset=UTF-8" },
-            credentials: "include",
-          }
-        ).then((res) => {
-          if (!res.ok) return { content: [] };
-          return res.json();
-        })
-      );
+      const storesRef = ref(db, "/jbnu_partnership");
+      const snapshot = await get(storesRef);
 
-      const results = await Promise.all(promises);
-      const allContent = results.flatMap((data) => data.content || []);
-      
-      return groupStores(allContent);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const allStores: PartnerStore[] = Object.values(data);
 
+        console.log("Firebase 전체 데이터:", allStores);
+
+        return groupStores(allStores);
+      } else {
+        console.warn("jbnu_partnership 노드에 데이터가 없습니다.");
+        return [];
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Firebase 제휴상점 로드 실패:", err);
       setError("데이터를 불러오는 중 오류가 발생했습니다.");
       return [];
     } finally {
@@ -125,9 +134,8 @@ export default function StoreSearchPage() {
 
   const searchStores = async () => {
     const allStores = await fetchAllStores();
-    
-    // 검색어 필터링 (대소문자 무시)
-    const filtered = keyword 
+
+    const filtered = keyword
       ? allStores.filter((store) =>
           store.storeName.toLowerCase().includes(keyword.toLowerCase())
         )
@@ -140,37 +148,45 @@ export default function StoreSearchPage() {
     searchStores();
   }, [keyword]);
 
-  // 클릭 시 이동할 ID 결정 함수
   const handleCardClick = (store: GroupedPartnerStore) => {
     const affiliations = store.affiliations;
-    let targetId = store.representativeId; // 기본값
+    let targetId = store.representativeId;
 
-    // 1순위: 내 소속(userAffiliation)과 일치하는 제휴
-    const myAffiliationMatch = affiliations.find(a => a.category === userAffiliation);
-    
+    const myAffiliationMatch = affiliations.find(
+      (a) => a.category === userAffiliation
+    );
+
     if (myAffiliationMatch) {
       targetId = myAffiliationMatch.storeId;
-      console.log(`[이동] 내 소속(${userAffiliation})과 일치하여 ID ${targetId}로 이동`);
+      console.log(
+        `[이동] 내 소속(${userAffiliation})과 일치하여 ID ${targetId}로 이동`
+      );
     } else {
-      // 내 소속과 일치하는게 없다면 우선순위 로직 적용
-      // 우선순위: 총학생회 -> 총동아리 -> 가나다순
+      const studentCouncil = affiliations.find(
+        (a) => a.category === "총학생회"
+      );
+      const clubUnion = affiliations.find(
+        (a) => a.category === "총동아리" || a.category === "총동아리연합회"
+      );
 
-      const studentCouncil = affiliations.find(a => a.category === "총학생회");
-      const clubUnion = affiliations.find(a => a.category === "총동아리" || a.category === "총동아리연합회");
-      
       if (studentCouncil) {
-        // 2순위: 총학생회
         targetId = studentCouncil.storeId;
-        console.log(`[이동] 내 소속 불일치 -> 총학생회 우선 적용 (ID ${targetId})`);
+        console.log(
+          `[이동] 내 소속 불일치 -> 총학생회 우선 적용 (ID ${targetId})`
+        );
       } else if (clubUnion) {
-        // 3순위: 총동아리
         targetId = clubUnion.storeId;
-        console.log(`[이동] 내 소속/총학 불일치 -> 총동아리 우선 적용 (ID ${targetId})`);
+        console.log(
+          `[이동] 내 소속/총학 불일치 -> 총동아리 우선 적용 (ID ${targetId})`
+        );
       } else {
-        // 4순위: 나머지 중 가나다순 정렬하여 첫 번째
-        const sorted = [...affiliations].sort((a, b) => a.category.localeCompare(b.category));
+        const sorted = [...affiliations].sort((a, b) =>
+          a.category.localeCompare(b.category)
+        );
         targetId = sorted[0].storeId;
-        console.log(`[이동] 우선순위 없음 -> 가나다순 첫번째(${sorted[0].category}) 적용 (ID ${targetId})`);
+        console.log(
+          `[이동] 우선순위 없음 -> 가나다순 첫번째(${sorted[0].category}) 적용 (ID ${targetId})`
+        );
       }
     }
 
@@ -179,8 +195,8 @@ export default function StoreSearchPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <TopNavigation 
-        title="검색 결과" 
+      <TopNavigation
+        title="검색 결과"
         leftAction={
           <button
             onClick={() => navigate(-1)}
@@ -201,7 +217,7 @@ export default function StoreSearchPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         )}
-        
+
         {error && <p className="text-red-500">{error}</p>}
 
         {!loading && stores.length > 0 ? (
@@ -210,11 +226,13 @@ export default function StoreSearchPage() {
               <Card
                 key={`${store.representativeId}-${store.storeName}`}
                 className="p-4 cursor-pointer hover:shadow-md transition-all"
-                onClick={() => handleCardClick(store)} // 클릭 시 우선순위 로직 실행
+                onClick={() => handleCardClick(store)}
               >
                 {/* 가게 이름 */}
-                <h3 className="font-sf font-bold text-text text-lg">{store.storeName}</h3>
-                
+                <h3 className="font-sf font-bold text-text text-lg">
+                  {store.storeName}
+                </h3>
+
                 {/* 가게 주소 */}
                 <div className="flex items-center gap-1 mt-1 mb-3">
                   <i className="ri-map-pin-line text-text-secondary text-xs" />
@@ -226,25 +244,29 @@ export default function StoreSearchPage() {
                   {store.affiliations
                     .sort((a, b) => a.category.localeCompare(b.category))
                     .map((aff, index) => (
-                      <span 
+                      <span
                         key={index}
                         className={`text-xs font-sf font-bold px-2 py-1.5 rounded-8 flex items-center gap-1 ${
-                          aff.category === userAffiliation 
-                            ? "bg-primary text-white" 
+                          aff.category === userAffiliation
+                            ? "bg-primary text-white"
                             : "bg-primary/10 text-primary"
                         }`}
                       >
                         <i className="ri-shake-hands-line"></i>
                         {aff.category} 제휴
                       </span>
-                  ))}
+                    ))}
                 </div>
               </Card>
             ))}
           </div>
         ) : (
           !loading &&
-          !error && <p className="text-text-secondary text-center py-10">검색 결과가 없습니다.</p>
+          !error && (
+            <p className="text-text-secondary text-center py-10">
+              검색 결과가 없습니다.
+            </p>
+          )
         )}
       </div>
 
