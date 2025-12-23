@@ -109,7 +109,7 @@ const API_CATEGORY_TO_DISPLAY: Record<string, string> = {
   BEAUTY: "beauty",
 };
 
-const convertPartnerStoreToStore = (
+export const convertPartnerStoreToStore = (
   partnerStore: PartnerStore,
   currentLocation: Location | null
 ): Store => {
@@ -295,7 +295,7 @@ const EventBanner = ({ onOpen }: { onOpen: () => void }) => {
           event_category: "Event Banner",
           event_label: "플로팅배너_확인",
         });
-        console.log("GA4 원본 스크립트로 전송 시도!");
+        console.log("GA4 원본 스크립트로 전송 시도");
       } else {
         console.warn("GA4 스크립트가 아직 로드되지 않았습니다.");
       }

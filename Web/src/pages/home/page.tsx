@@ -120,45 +120,52 @@ export default function Home() {
   const [data, setData] = useState<PartnerStore[]>([]);
 
   useEffect(() => {
+    if (!affiliation) {
+      console.log("소속 단과대학 정보가 없습니다.");
+      setData([]);
+      return;
+    }
+
     const storesRef = ref(db, "/jbnu_partnership");
 
     const unsubscribe = onValue(storesRef, (snapshot) => {
       const data = snapshot.val();
+
       if (data) {
-        const storeList: PartnerStore[] = Object.values(data);
-        setData(storeList);
-        console.log(data);
+        const allStores: PartnerStore[] = Object.values(data);
+
+        const filteredStores = allStores.filter((store) => {
+          const partnerCategory =
+            store.partner_category || store.partnerCategory;
+          return partnerCategory === affiliation;
+        });
+
+        console.log(`${affiliation} 필터링 결과:`, filteredStores.length);
+        setData(filteredStores);
+      } else {
+        console.log("파베 데이터 없음");
+        setData([]);
       }
-      console.log("파베 데이터", data);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [affiliation]);
 
-  const fetchRandomPartnerStore = async () => {
+  const fetchRandomPartnerStore = () => {
     try {
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/partner-store/random?partnerCategory=${affiliation}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json; charset=UTF-8",
-          },
-          credentials: "include",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("랜덤 제휴상점 정보를 가져오는데 실패했습니다.");
+      if (!data || data.length === 0) {
+        console.error("제휴상점 데이터가 없습니다.");
+        return;
       }
 
-      const data: RandInfoType = await response.json();
+      const randomIndex = Math.floor(Math.random() * data.length);
+      const randomStore = {
+        ...data[randomIndex],
+        storeName: data[randomIndex].store_name,
+        partnerBenefit: data[randomIndex].partner_benefit,
+      };
 
-      console.log("랜덤 제휴상점 데이터:", data);
-
-      setRandInfo(data);
+      setRandInfo(randomStore);
     } catch (err) {
       console.error("랜덤 제휴상점 데이터 로드 오류:", err);
     }
@@ -185,7 +192,7 @@ export default function Home() {
   useEffect(() => {
     fetchRandomPartnerStore();
     setTopCategory(affiliation as string);
-  }, []);
+  }, [data]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
