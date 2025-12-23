@@ -4,6 +4,7 @@ import TopNavigation from "../../components/feature/TopNavigation";
 import BottomNavigation from "../../components/feature/BottomNavigation";
 import Card from "../../components/base/Card";
 import Button from "../../components/base/Button";
+import { useAuth } from "../../hooks/useAuth";
 
 interface StampCard {
   id: string;
@@ -111,8 +112,8 @@ export default function ProfilePage() {
   });
 
   const [editForm, setEditForm] = useState<UserProfile>({ ...userProfile });
-
   const navigate = useNavigate();
+  const { logout, loading } = useAuth();
 
   const handleStampCardClick = (card: StampCard) => {
     setSelectedCard(card);
@@ -223,9 +224,14 @@ export default function ProfilePage() {
       <div className="flex justify-center items-center pt-20 px-4">
         <button
           onClick={() => {
-            /* 로그아웃 로직 */
+            if (!loading) {
+              logout();
+            }
           }}
-          className="group relative px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-sf text-sm font-medium rounded-lg shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 active:scale-95"
+          disabled={loading}
+          className={`group relative px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-sf text-sm font-medium rounded-lg shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+            loading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           <span className="flex items-center gap-2">
             <svg
@@ -241,7 +247,7 @@ export default function ProfilePage() {
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
-            로그아웃
+            {loading ? "로그아웃 중..." : "로그아웃"}
           </span>
         </button>
 
