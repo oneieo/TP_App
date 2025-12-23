@@ -1,26 +1,39 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
+import type { User } from "firebase/auth";
 
 interface AuthState {
   isLoggedIn: boolean;
-  setIsLoggedIn: (value: boolean) => void;
+  affiliation: string | null;
+  firebaseUser: User | null;
+  setIsLoggedIn: (isLoggedIn: boolean) => void;
+  setAffiliation: (affiliation: string) => void;
+  setFirebaseUser: (user: User | null) => void;
   logout: () => void;
-  affiliation: string;
-  setAffiliation: (value: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       isLoggedIn: false,
-      affiliation: "",
-      setIsLoggedIn: (value) => set({ isLoggedIn: value }),
-      setAffiliation: (value) => set({ affiliation: value }),
-      logout: () => set({ isLoggedIn: false }),
+      affiliation: null,
+      firebaseUser: null,
+      setIsLoggedIn: (isLoggedIn) => set({ isLoggedIn }),
+      setAffiliation: (affiliation) => set({ affiliation }),
+      setFirebaseUser: (user) => set({ firebaseUser: user }),
+      logout: () =>
+        set({
+          isLoggedIn: false,
+          affiliation: null,
+          firebaseUser: null,
+        }),
     }),
     {
       name: "auth-storage",
-      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        isLoggedIn: state.isLoggedIn,
+        affiliation: state.affiliation,
+      }),
     }
   )
 );

@@ -13,8 +13,9 @@ import type {
 } from "../../types/partnerStoreType";
 import AffiliationEditModal from "../../components/feature/AffiliationEditModal";
 
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, remove } from "firebase/database";
 import { db } from "../../firebase/config";
+import firebase from "firebase/compat/app";
 
 // TODO: 현재위치 -> 소속대학으로 변경
 // TODO: 내비바 알림 아이콘 지우기
@@ -119,7 +120,7 @@ export default function Home() {
   const [data, setData] = useState<PartnerStore[]>([]);
 
   useEffect(() => {
-    const storesRef = ref(db, "/");
+    const storesRef = ref(db, "/jbnu_partnership");
 
     const unsubscribe = onValue(storesRef, (snapshot) => {
       const data = snapshot.val();
