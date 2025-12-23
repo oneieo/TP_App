@@ -8,13 +8,14 @@ import {
   Alert,
   Image,
   StyleSheet,
+  Modal,
+  FlatList,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../../hooks/useAuth";
 import { useAuthState } from "../../../hooks/useAuthState";
 import { getUserProfile, saveUserProfile } from "../../../utils/userService";
-import { useAuthStore } from "@/app/store/useAuthStore";
+import { useAuthStore } from "../../store/useAuthStore";
 
 export const affiliationOptions = [
   "간호대학",
@@ -47,6 +48,7 @@ export default function LoginPage() {
   const { user: firebaseUser, loading: userLoading } = useAuthState();
   const { setAffiliation, setIsLoggedIn, setFirebaseUser, affiliation } =
     useAuthStore();
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -56,7 +58,7 @@ export default function LoginPage() {
           setAffiliation(profile.affiliation);
           setIsLoggedIn(true);
           setFirebaseUser(firebaseUser);
-          navigation.navigate("Home");
+          navigation.navigate("(tabs)");
         } else {
           setStep("affiliation");
           setFirebaseUser(firebaseUser);
@@ -76,7 +78,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (firebaseUser && affiliation) {
-      navigation.navigate("Home");
+      navigation.navigate("(tabs)");
     }
   }, [firebaseUser, affiliation, navigation]);
 
@@ -89,7 +91,7 @@ export default function LoginPage() {
       if (profile && profile.affiliation) {
         setAffiliation(profile.affiliation);
         setIsLoggedIn(true);
-        navigation.navigate("Home");
+        navigation.navigate("(tabs)");
       } else {
         setStep("affiliation");
       }
@@ -114,7 +116,7 @@ export default function LoginPage() {
       await saveUserProfile(firebaseUser, clickedOption);
       setAffiliation(clickedOption);
       setIsLoggedIn(true);
-      navigation.navigate("Home");
+      navigation.navigate("(tabs)");
     } catch (error) {
       console.error("로그인 오류:", error);
       Alert.alert("오류", "로그인에 실패했습니다. 다시 시도해주세요.");
@@ -215,18 +217,66 @@ export default function LoginPage() {
 
           <View style={styles.formContainer}>
             <Text style={styles.label}>소속 단과대학</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={clickedOption}
-                onValueChange={(itemValue) => setClickedOption(itemValue)}
-                style={styles.picker}
+            <TouchableOpacity
+              style={styles.selectButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text
+                style={
+                  clickedOption ? styles.selectedText : styles.placeholderText
+                }
               >
-                <Picker.Item label="단과대학을 선택하세요" value="" />
-                {affiliationOptions.map((option) => (
-                  <Picker.Item key={option} label={option} value={option} />
-                ))}
-              </Picker>
-            </View>
+                {clickedOption || "단과대학을 선택하세요"}
+              </Text>
+              <Text style={styles.arrowIcon}>▼</Text>
+            </TouchableOpacity>
+
+            <Modal
+              visible={modalVisible}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>단과대학 선택</Text>
+                    <TouchableOpacity onPress={() => setModalVisible(false)}>
+                      <Text style={styles.closeButton}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <FlatList
+                    data={affiliationOptions}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.optionItem,
+                          clickedOption === item && styles.selectedOption,
+                        ]}
+                        onPress={() => {
+                          setClickedOption(item);
+                          setModalVisible(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            clickedOption === item && styles.selectedOptionText,
+                          ]}
+                        >
+                          {item}
+                        </Text>
+                        {clickedOption === item && (
+                          <Text style={styles.checkmark}>✓</Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              </View>
+            </Modal>
 
             <TouchableOpacity
               style={[
@@ -253,6 +303,81 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
+  selectButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+  },
+  placeholderText: {
+    color: "#9CA3AF",
+    fontSize: 14,
+  },
+  selectedText: {
+    color: "#1F2937",
+    fontSize: 14,
+  },
+  arrowIcon: {
+    color: "#6B7280",
+    fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  closeButton: {
+    fontSize: 24,
+    color: "#6B7280",
+    fontWeight: "300",
+  },
+  optionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  selectedOption: {
+    backgroundColor: "#EEF2FF",
+  },
+  optionText: {
+    fontSize: 16,
+    color: "#1F2937",
+  },
+  selectedOptionText: {
+    color: "#4F46E5",
+    fontWeight: "600",
+  },
+  checkmark: {
+    fontSize: 18,
+    color: "#4F46E5",
+  },
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -410,8 +535,15 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     borderRadius: 12,
     overflow: "hidden",
+    backgroundColor: "#FFFFFF", // 배경색 추가
   },
   picker: {
     height: 56,
+    width: "100%", // 추가
+  },
+  pickerItem: {
+    // iOS용 추가
+    height: 56,
+    fontSize: 14,
   },
 });

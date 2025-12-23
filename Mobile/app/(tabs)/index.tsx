@@ -215,11 +215,11 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import LoginScreen from "../screens/auth/LoginScreen";
-
+import MainScreen from "../screens/home/MainScreen";
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
-      <LoginScreen />
+      <MainScreen />
     </View>
   );
 }
