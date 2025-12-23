@@ -611,27 +611,37 @@ export default function MapPage() {
   useEffect(() => {
     const fetchWinterSnacks = async () => {
       try {
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_BASE_URL
-          }/partner-store?page=0&size=100&partnerCategory=겨울간식`,
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json; charset=UTF-8",
-            },
-            credentials: "include",
-          }
-        );
+        const storesRef = ref(db, "jbnu_partnership");
+        const snapshot = await get(storesRef);
 
-        if (!response.ok) {
-          throw new Error("붕어빵집 정보를 가져오는데 실패했습니다.");
+        if (snapshot.exists()) {
+          const rawData = snapshot.val();
+          const allStores = Array.isArray(rawData)
+            ? rawData
+            : Object.values(rawData);
+
+          const winterSnackStores = allStores.filter((store: any) => {
+            const category = store.partner_category || store.partnerCategory;
+            return category === "겨울간식";
+          });
+
+          console.log("붕어빵집 데이터:", winterSnackStores);
+
+          const normalizedSnacks = winterSnackStores.map((store: any) => ({
+            ...store,
+            partnerStoreId: store.partner_store_id || store.partnerStoreId,
+            storeName: store.store_name || store.storeName,
+            partnerCategory: store.partner_category || store.partnerCategory,
+            lat: Number(store.lat),
+            lng: Number(store.lng),
+            title: store.store_name || store.storeName,
+          }));
+
+          setWinterSnacks(normalizedSnacks);
+        } else {
+          console.warn("jbnu_partnership 노드에 데이터가 없습니다.");
+          setWinterSnacks([]);
         }
-
-        const data = await response.json();
-        console.log("붕어빵집 데이터:", data);
-
-        setWinterSnacks(data.content);
       } catch (err) {
         console.error("붕어빵집 데이터 로드 오류:", err);
         setError(err instanceof Error ? err.message : "알 수 없는 오류");
