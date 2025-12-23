@@ -1,6 +1,7 @@
 import React, { useState, type Dispatch, type SetStateAction } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useNavigate } from "react-router-dom";
+import { updateUserAffiliation } from "../../utils/userService";
+import { auth } from "../../firebase/config";
 import Card from "../base/Card";
 import { affiliationOptions } from "../../pages/auth/login/page";
 import Button from "../base/Button";
@@ -15,48 +16,36 @@ const AffiliationEditModal = ({
   affilModalView,
   setAffilModalView,
 }: ModalViewProps) => {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const { affiliation, setAffiliation, setIsLoggedIn } =
-    useAuthStore.getState();
-  const { setTopCategory, setSelectedCategory } = useCategoryStore();
+  const { affiliation, setAffiliation } = useAuthStore();
+  const { setTopCategory } = useCategoryStore();
   const [clickedOption, setClickedOption] = useState<string>(affiliation || "");
 
   if (!affilModalView) return null;
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/member/pre-signup`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json; charset=UTF-8",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            affiliation: clickedOption,
-          }),
-        }
-      );
+      await updateUserAffiliation(currentUser.uid, clickedOption);
 
-      if (!response.ok) {
-        throw new Error("로그인 실패");
-      }
-
-      const data = await response.json();
-      console.log("로그인 성공:", data);
-      setIsLoggedIn(true);
       setAffiliation(clickedOption);
       setTopCategory(clickedOption);
+
+      console.log("소속 변경 성공");
       setAffilModalView(false);
+      alert("소속 대학이 변경되었습니다.");
     } catch (error) {
-      console.error("로그인 오류:", error);
-      alert("로그인에 실패했습니다.");
+      console.error("소속 대학 변경 오류:", error);
+      alert("변경에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -82,13 +71,11 @@ const AffiliationEditModal = ({
         </div>
 
         <div className="px-4">
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleUpdate} className="space-y-4">
             <div className="relative">
               <select
                 value={clickedOption}
-                onChange={(e) => {
-                  setClickedOption(e.target.value);
-                }}
+                onChange={(e) => setClickedOption(e.target.value)}
                 className="w-full p-4 pl-12 pr-12 border border-gray-200 rounded-12 focus:border-primary focus:outline-none font-sf text-sm appearance-none"
                 required
               >
