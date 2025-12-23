@@ -214,9 +214,9 @@ export default function LoginPage() {
                   />
                 )}
                 <div className="flex-1">
-                  <p className="font-sf font-medium text-text">
+                  {/* <p className="font-sf font-medium text-text">
                     {firebaseUser.displayName || "사용자"}
-                  </p>
+                  </p> */}
                   <p className="text-sm text-text-secondary font-sf">
                     {firebaseUser.email}
                   </p>

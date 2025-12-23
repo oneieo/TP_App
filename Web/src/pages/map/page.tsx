@@ -474,8 +474,6 @@ export default function MapPage() {
             ? rawData
             : Object.values(rawData);
 
-          console.log("Firebase 원본 데이터:", partnerStores);
-
           const filteredByCategory = partnerStores.filter((ps) => {
             const category = ps.partner_category || ps.partnerCategory;
             return category === topCategory;
