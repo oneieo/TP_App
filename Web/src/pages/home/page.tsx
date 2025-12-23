@@ -7,8 +7,14 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { usePartnerStore } from "../../store/usePartnerStore";
-import type { PartnerStoreResponse } from "../../types/partnerStoreType";
+import type {
+  PartnerStore,
+  PartnerStoreResponse,
+} from "../../types/partnerStoreType";
 import AffiliationEditModal from "../../components/feature/AffiliationEditModal";
+
+import { ref, onValue } from "firebase/database";
+import { db } from "../../firebase/config";
 
 // TODO: 현재위치 -> 소속대학으로 변경
 // TODO: 내비바 알림 아이콘 지우기
@@ -109,6 +115,24 @@ export default function Home() {
     navigate(`/store?keyword=${encodeURIComponent(searchValue.trim())}`);
   };
   const { affiliation } = useAuthStore();
+
+  const [data, setData] = useState<PartnerStore[]>([]);
+
+  useEffect(() => {
+    const storesRef = ref(db, "/");
+
+    const unsubscribe = onValue(storesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const storeList: PartnerStore[] = Object.values(data);
+        setData(storeList);
+        console.log(data);
+      }
+      console.log("파베 데이터", data);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const fetchRandomPartnerStore = async () => {
     try {

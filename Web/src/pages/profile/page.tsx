@@ -220,10 +220,30 @@ export default function ProfilePage() {
       />
 
       {/* 기존 스타일(삭제 X) <div className="pt-20 px-4 space-y-6"> */}
-      <div className="flex justify-center items-centerpt-20 px-4 space-y-6">
-        <p className="text-text-secondary font-sf pt-20 text-sm px-4">
-          추후 업데이트 예정입니다.
-        </p>
+      <div className="flex justify-center items-center pt-20 px-4">
+        <button
+          onClick={() => {
+            /* 로그아웃 로직 */
+          }}
+          className="group relative px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-sf text-sm font-medium rounded-lg shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 active:scale-95"
+        >
+          <span className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5 transition-transform group-hover:-translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+            로그아웃
+          </span>
+        </button>
 
         {/* <Card>
           <div className="flex items-center gap-4">
