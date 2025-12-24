@@ -14,6 +14,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { ref, onValue } from "firebase/database";
 import { db } from "../../../firebase/config";
 import AffiliationEditModal from "../../../components/AffiliationEditModal";
+import { useRouter } from "expo-router";
 
 const icons = ["👩🏻‍🎓", "🏫", "🎸", "🍜", "☕", "🍺", "🎁"];
 
@@ -27,7 +28,7 @@ export default function Home() {
     getSelectedCategory,
     setTopCategory,
   } = useCategoryStore();
-
+  const router = useRouter();
   const { affiliation } = useAuthStore();
   const [randInfo, setRandInfo] = useState();
   const [searchValue, setSearchValue] = useState("");
@@ -74,9 +75,7 @@ export default function Home() {
 
   const handleSearch = () => {
     if (!searchValue.trim()) return;
-    navigation.navigate("Store", {
-      keyword: searchValue.trim(),
-    });
+    router.push(`/screens/search/SearchScreen?keyword=${searchValue.trim()}`);
   };
 
   const handleClickCategoryBtn = (name) => {

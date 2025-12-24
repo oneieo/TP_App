@@ -33,6 +33,16 @@ export default function RootLayout() {
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}
         />
+
+        <Stack.Screen
+          name="screens/search/SearchScreen"
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="screens/store/StoreScreen"
+          options={{ headerShown: false }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
