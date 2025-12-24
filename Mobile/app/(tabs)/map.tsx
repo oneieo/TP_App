@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import MapScreen from "../../app/screens/map/MapScreen";
 
-export default function ExploreTab() {
+export default function MapTab() {
   return (
     <View style={styles.container}>
       <MapScreen />

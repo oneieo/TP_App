@@ -310,15 +310,15 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
   selectedOptionText: {
-    color: "#4F46E5",
+    color: "#5CBDB5",
     fontWeight: "600",
   },
   checkmark: {
     fontSize: 18,
-    color: "#4F46E5",
+    color: "#5CBDB5",
   },
   submitButton: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#5CBDB5",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",

@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { Text } from "react-native";
 import { useCategoryStore } from "@/app/store/useCategoryStore";
 
 export default function TabLayout() {
@@ -9,7 +9,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#4F46E5",
+        tabBarActiveTintColor: "#5CBDB5",
         tabBarInactiveTintColor: "#9CA3AF",
         headerShown: true,
         headerStyle: {
@@ -49,9 +49,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="map"
+        name="explore"
         options={{
-          title: "지도",
+          title: "",
           tabBarIcon: ({ color }) => <TabBarIcon name="📍" color={color} />,
         }}
         listeners={{
@@ -61,16 +61,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="coupons"
+        name="coupon"
         options={{
-          title: "쿠폰",
+          title: "",
           tabBarIcon: ({ color }) => <TabBarIcon name="🎟️" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="mypage"
         options={{
-          title: "마이",
+          title: "",
           tabBarIcon: ({ color }) => <TabBarIcon name="👤" color={color} />,
         }}
       />
@@ -78,7 +78,6 @@ export default function TabLayout() {
   );
 }
 
-// 간단한 아이콘 컴포넌트 (이모지 사용)
 function TabBarIcon({ name, color }: { name: string; color: string }) {
   return <Text style={{ fontSize: 24 }}>{name}</Text>;
 }
