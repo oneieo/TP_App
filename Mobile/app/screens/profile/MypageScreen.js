@@ -13,9 +13,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../../../hooks/useAuth";
 
 export default function MypageScreen() {
   const navigation = useNavigation();
+  const { logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -175,13 +177,32 @@ export default function MypageScreen() {
     setShowEditProfile(false);
   };
 
-  const handleLogout = () => {
-    setLoading(true);
-    // 로그아웃 로직 구현
-    setTimeout(() => {
-      setLoading(false);
-      // navigation.navigate("Login");
-    }, 1000);
+  const handleLogout = async () => {
+    Alert.alert("로그아웃", "정말 로그아웃 하시겠습니까?", [
+      {
+        text: "취소",
+        style: "cancel",
+      },
+      {
+        text: "로그아웃",
+        style: "destructive",
+        onPress: async () => {
+          setLoading(true);
+          try {
+            await logout();
+            // Expo Router의 파일 경로로 이동
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "screens/auth/LoginScreen" }],
+            });
+          } catch (error) {
+            Alert.alert("오류", "로그아웃 중 문제가 발생했습니다.");
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+    ]);
   };
 
   const affiliationOptions = [
