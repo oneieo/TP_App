@@ -70,7 +70,7 @@ export const useAuth = () => {
     setLoading(true);
     setError(null);
 
-    const email = "test@neardeal.com";
+    const email = "boywonderof@jbnu.ac.kr";
     const password = "test123456";
 
     try {
@@ -85,7 +85,7 @@ export const useAuth = () => {
 
         await updateProfile(userCredential.user, {
           displayName: "Test User",
-          photoURL: "https://avatars.githubusercontent.com/u/1?v=4", // 테스트 이미지
+          photoURL: "https://i.ibb.co/HLY2nYqh/avatar.png",
         });
 
         console.log("✅ 새 계정 생성 성공");

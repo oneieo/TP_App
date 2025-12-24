@@ -18,6 +18,8 @@ import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 import * as Location from "expo-location";
 
+const NAVER_MAP_CLIENT_ID = process.env.EXPO_PUBLIC_NAVER_MAP_CLIENT_ID;
+
 const { width, height } = Dimensions.get("window");
 
 const DEFAULT_LOCATION = {
@@ -33,8 +35,6 @@ const CATEGORY_MAPPING = {
   기타: "ETC",
   총학생회: "STUDENT_COUNCIL",
 };
-
-const NAVER_MAP_CLIENT_ID = "ejvmabqaju"; // 네이버 클라이언트 ID를 여기에 입력
 
 const calculateDistance = (lat1, lng1, lat2, lng2) => {
   const R = 6371e3;
