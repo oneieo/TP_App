@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 import { useAuthStore } from "../../store/useAuthStore";
+import { router } from "expo-router";
 
 export default function SearchScreen() {
   const navigation = useNavigation();
@@ -156,7 +157,10 @@ export default function SearchScreen() {
       }
     }
 
-    navigation.navigate("Store", { id: String(targetId) });
+    router.push({
+      pathname: "/screens/store/StoreScreen",
+      params: { id: String(targetId) },
+    });
   };
 
   return (

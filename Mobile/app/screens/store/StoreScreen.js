@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 import { usePartnerStore } from "../../../app/store/usePartnerStore";
+import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -352,7 +353,10 @@ export default function StoreScreen() {
                         key={aff.category}
                         onPress={() => {
                           if (aff.storeId !== store.id) {
-                            navigation.replace("Store", { id: aff.storeId });
+                            router.push({
+                              pathname: "/screens/store/StoreScreen",
+                              params: { id: String(aff.storeId) },
+                            });
                           }
                         }}
                         style={[
