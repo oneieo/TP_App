@@ -49,10 +49,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="map"
         options={{
           title: "",
-          tabBarIcon: ({ color }) => <TabBarIcon name="📍" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="🗺️" color={color} />,
         }}
         listeners={{
           tabPress: () => {

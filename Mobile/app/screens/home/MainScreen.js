@@ -15,6 +15,8 @@ import { ref, onValue } from "firebase/database";
 import { db } from "../../../firebase/config";
 import AffiliationEditModal from "../../../components/AffiliationEditModal";
 
+const icons = ["👩🏻‍🎓", "🏫", "🎸", "🍜", "☕", "🍺", "🎁"];
+
 export default function Home() {
   const navigation = useNavigation();
   const {
@@ -34,9 +36,7 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    console.log("1. affiliation:", affiliation);
     if (!affiliation) {
-      console.log("소속 단과대학 정보가 없습니다.");
       setData([]);
       return;
     }
@@ -45,20 +45,15 @@ export default function Home() {
 
     const unsubscribe = onValue(storesRef, (snapshot) => {
       const data = snapshot.val();
-
       if (data) {
         const allStores = Object.values(data);
-
         const filteredStores = allStores.filter((store) => {
           const partnerCategory =
             store.partner_category || store.partnerCategory;
           return partnerCategory === affiliation;
         });
-
-        console.log(`${affiliation} 필터링 결과:`, filteredStores.length);
         setData(filteredStores);
       } else {
-        console.log("파베 데이터 없음");
         setData([]);
       }
     });
@@ -67,22 +62,14 @@ export default function Home() {
   }, [affiliation]);
 
   const fetchRandomPartnerStore = () => {
-    try {
-      if (!data || data.length === 0) {
-        return;
-      }
-
-      const randomIndex = Math.floor(Math.random() * data.length);
-      const randomStore = {
-        id: data[randomIndex].id,
-        storeName: data[randomIndex].store_name,
-        partnerBenefit: data[randomIndex].partner_benefit,
-      };
-
-      setRandInfo(randomStore);
-    } catch (err) {
-      console.error("랜덤 제휴상점 데이터 로드 오류:", err);
-    }
+    if (!data || data.length === 0) return;
+    const randomIndex = Math.floor(Math.random() * data.length);
+    const randomStore = {
+      id: data[randomIndex].id,
+      storeName: data[randomIndex].store_name,
+      partnerBenefit: data[randomIndex].partner_benefit,
+    };
+    setRandInfo(randomStore);
   };
 
   const handleSearch = () => {
@@ -97,8 +84,7 @@ export default function Home() {
     setTopCategory(
       name === "총학생회" || name === "총동아리" ? name : affiliation
     );
-    console.log(getSelectedCategory()?.name);
-    navigation.navigate("Map");
+    navigation.navigate("map");
   };
 
   const onRefresh = React.useCallback(() => {
@@ -108,11 +94,7 @@ export default function Home() {
   }, [data]);
 
   useEffect(() => {
-    if (selectedCategoryName !== "") {
-      setSelectedCategory("none");
-    } else {
-      setSelectedCategory("none");
-    }
+    setSelectedCategory("none");
   }, []);
 
   useEffect(() => {
@@ -148,7 +130,6 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* 메인 콘텐츠 */}
         <View style={styles.content}>
           {/* 인사말 */}
           <View style={styles.greetingSection}>
@@ -173,10 +154,9 @@ export default function Home() {
             </TouchableOpacity>
           </View>
 
-          {/* 카테고리 */}
           <View style={styles.categorySection}>
             <View style={styles.categoryGrid}>
-              {categories.map((category) => (
+              {categories.map((category, index) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
@@ -193,7 +173,9 @@ export default function Home() {
                         styles.categoryIconContainerActive,
                     ]}
                   >
-                    <Text style={styles.categoryIcon}>{/* 아이콘 */}</Text>
+                    <Text style={styles.categoryIcon}>
+                      {icons[index] || "✨"}
+                    </Text>
                   </View>
                   <Text
                     style={[
@@ -202,14 +184,13 @@ export default function Home() {
                         styles.categoryTextActive,
                     ]}
                   >
-                    {category.name}
+                    {category.name === "단과대학" ? affiliation : category.name}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          {/* 오늘의 제휴 */}
           <TouchableOpacity
             style={styles.todayDealCard}
             onPress={fetchRandomPartnerStore}
@@ -230,25 +211,28 @@ export default function Home() {
             <View style={styles.todayDealContent}>
               <View style={styles.storeNameContainer}>
                 <Text style={styles.storeNameEmoji}>🏪</Text>
-                <Text style={styles.storeName}>{randInfo?.storeName}</Text>
+                <Text style={styles.storeName}>
+                  {randInfo?.storeName || "상점을 불러오는 중..."}
+                </Text>
               </View>
 
               <View style={styles.benefitContainer}>
                 <Text style={styles.benefitText}>
-                  {randInfo?.partnerBenefit}
+                  {randInfo?.partnerBenefit || "새로고침을 눌러보세요!"}
                 </Text>
               </View>
             </View>
 
             <View style={styles.refreshHint}>
               <Text style={styles.refreshHintIcon}>✨</Text>
-              <Text style={styles.refreshHintText}>다른 제휴혜택 보기</Text>
+              <Text style={styles.refreshHintText}>
+                다른 제휴혜택 보기 (터치)
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* 단과대학 변경 모달 */}
       <AffiliationEditModal
         visible={affilModalView}
         onClose={() => setAffilModalView(false)}
@@ -258,16 +242,9 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
+  container: { flex: 1, backgroundColor: "#F9FAFB" },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 100 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -278,10 +255,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  headerLeft: { flexDirection: "row", alignItems: "center" },
   locationIcon: {
     width: 32,
     height: 32,
@@ -289,50 +263,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 8,
   },
-  locationIconText: {
-    fontSize: 20,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  headerTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
+  locationIconText: { fontSize: 20 },
+  headerSubtitle: { fontSize: 12, color: "#6B7280" },
+  headerTitle: { fontSize: 14, fontWeight: "600", color: "#1F2937" },
   changeButton: {
     backgroundColor: "#6acdc5",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
-  changeButtonText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-  },
-  greetingSection: {
-    marginBottom: 20,
-  },
+  changeButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "600" },
+  content: { paddingHorizontal: 16, paddingTop: 24 },
+  greetingSection: { marginBottom: 20 },
   greetingTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#1F2937",
     marginBottom: 4,
   },
-  greetingSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  searchContainer: {
-    position: "relative",
-    marginBottom: 24,
-  },
+  greetingSubtitle: { fontSize: 14, color: "#6B7280" },
+  searchContainer: { position: "relative", marginBottom: 24 },
   searchInput: {
     height: 48,
     paddingLeft: 48,
@@ -353,12 +303,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  searchIconText: {
-    fontSize: 18,
-  },
-  categorySection: {
-    marginBottom: 24,
-  },
+  searchIconText: { fontSize: 18 },
+  categorySection: { marginBottom: 24 },
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -371,31 +317,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  categoryButtonActive: {},
   categoryIconContainer: {
-    width: 35,
-    height: 35,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: "#F3F4F6",
   },
-  categoryIconContainerActive: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
-  categoryIcon: {
-    fontSize: 18,
-  },
+  categoryIconContainerActive: { backgroundColor: "rgba(106, 205, 197, 0.2)" },
+  categoryIcon: { fontSize: 24 },
   categoryText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
-    color: "#1F2937",
+    color: "#4B5563",
     textAlign: "center",
   },
-  categoryTextActive: {
-    color: "#6acdc5",
-  },
+  categoryTextActive: { color: "#6acdc5", fontWeight: "600" },
   todayDealCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
@@ -414,78 +353,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  todayDealTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  todayDealEmoji: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  todayDealTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1F2937",
-  },
+  todayDealTitleContainer: { flexDirection: "row", alignItems: "center" },
+  todayDealEmoji: { fontSize: 24, marginRight: 8 },
+  todayDealTitle: { fontSize: 20, fontWeight: "bold", color: "#1F2937" },
   todayDealBadge: {
     backgroundColor: "#6acdc5",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 20,
   },
-  todayDealBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  todayDealContent: {
-    marginBottom: 12,
-  },
+  todayDealBadgeText: { color: "#FFFFFF", fontSize: 12, fontWeight: "600" },
+  todayDealContent: { marginBottom: 12 },
   storeNameContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "#F9FAFB",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#D1FAE5",
+    borderColor: "#E5E7EB",
   },
-  storeNameEmoji: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  storeName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
+  storeNameEmoji: { fontSize: 18, marginRight: 8 },
+  storeName: { fontSize: 16, fontWeight: "600", color: "#1F2937" },
   benefitContainer: {
-    backgroundColor: "#ECFDF5",
+    backgroundColor: "#F0FDF4",
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: "#DCFCE7",
   },
-  benefitText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#1F2937",
-  },
+  benefitText: { fontSize: 14, fontWeight: "500", color: "#166534" },
   refreshHint: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
   },
-  refreshHintIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  refreshHintText: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
+  refreshHintIcon: { fontSize: 14, marginRight: 4 },
+  refreshHintText: { fontSize: 12, color: "#9CA3AF", fontWeight: "500" },
 });

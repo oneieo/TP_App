@@ -84,7 +84,6 @@ export const useAuth = () => {
         );
 
         await updateProfile(userCredential.user, {
-          displayName: "Test User",
           photoURL: "https://i.ibb.co/HLY2nYqh/avatar.png",
         });
 
